@@ -1,0 +1,9 @@
+preciso que seu sistema tenha 
+uma tela de login, 
+controle de rotas,
+exclusão, 
+atualização de usuários, 
+exclusão, 
+atualização de mensagens
+e 
+templates url.
