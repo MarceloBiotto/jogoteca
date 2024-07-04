@@ -1,10 +1,21 @@
-from flask import Flask, render_template, request
-from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, validators
-from typing import NotRequired
-from bd import conecta_no_banco_de_dados
+from flask import Flask, render_template, request, redirect, url_for, flash
+import mysql.connector
 
 app = Flask(__name__)
+app.secret_key = 'sua_chave_secreta'  # Necessária para usar flash messages e cookies
+
+def conecta_no_banco_de_dados():
+    try:
+        return mysql.connector.connect(
+            host='127.0.0.1', 
+            user='root', 
+            password='', 
+            database='jogoteca', 
+            charset='utf8mb4'
+        )
+    except mysql.connector.Error as err:
+        print("Erro ao conectar ao banco de dados:", err)
+        return None
 
 class Jogo:
     def __init__(self, nome, categoria, console):
@@ -12,69 +23,90 @@ class Jogo:
         self.categoria = categoria
         self.console = console
 
-@app.route('/inicio')  ## rota para acessa a lista de jogos do usuario acessado
+jogo1 = Jogo('Tetris', 'Puzzle', 'Atari')
+jogo2 = Jogo('God of War', 'Hack n Slash', 'PS2')
+jogo3 = Jogo('Mortal Kombat', 'Luta', 'PS2')
+lista = [jogo1, jogo2, jogo3]
+
+@app.route('/inicio')
 def ola():
-    jogo1 = Jogo('Tetris', 'Puzzle', 'Atari')
-    jogo2 = Jogo('God of War', 'Hack n Slash', 'PS2')
-    jogo3 = Jogo('Mortal Kombat', 'Luta', 'PS2')
-    lista = [jogo1, jogo2, jogo3]
     return render_template('lista.html', titulo='Jogos', jogos=lista)
 
+@app.route('/novo')
+def novo():
+    return render_template('novo.html', titulo='Novo Jogo')
 
+@app.route('/criar', methods=['POST'])
+def criar():
+    nome = request.form['nome']
+    categoria = request.form['categoria']
+    console = request.form['console']
+    jogo = Jogo(nome, categoria, console)
+    lista.append(jogo)
+    return redirect(url_for('ola'))
 
+@app.route('/cadastrar', methods=['GET', 'POST'])
+def cadastrar():
+    if request.method == 'POST':
+        nome = request.form['nome']
+        email = request.form['email']
+        senha = request.form['senha']
 
-class FormularioCadastro(FlaskForm):
-    nome = StringField('Nome:', validators=[validators.DataRequired()])
-    email = StringField('Email:', validators=[validators.DataRequired(), validators.Email()])
-    # mensagem = StringField('Mensagem:', validators=[validators.DataRequired(), validators.Length(min=10)])
-    
-    
-@app.route('/login', methods=['GET','POST']) ##rota para fazer o login
-def pagina_login():
-    
-    bd =conecta_no_banco_de_dados()
-    nome = request.form.get('nome')
-    email = request.form.get('email')
-    print(nome,email)  ##verificacao se esta printando, atualmente exibindo none none 21:02 03/07
-    cursor = bd.cursor()
-    cursor.close()
-    bd.close()
-    return render_template('login.html')
+        if not nome or not email or not senha:
+            flash("Todos os campos são obrigatórios.")
+            return redirect(url_for('cadastrar'))
 
-@app.route('/cadastro') ##rota para fazer o cadastro caso o usuario n possua cadastro
-def fazer_cadastro():
+        bd = conecta_no_banco_de_dados()
+        if bd is None:
+            flash("Erro ao conectar ao banco de dados.")
+            return redirect(url_for('cadastrar'))
+
+        cursor = bd.cursor()
+        try:
+            cursor.execute("INSERT INTO contatos (nome, email, senha) VALUES (%s, %s, %s)", (nome, email, senha))
+            bd.commit()
+            flash("Usuário cadastrado com sucesso.")
+            return redirect(url_for('pagina_login'))
+        except mysql.connector.Error as err:
+            flash("Erro ao cadastrar usuário: {}".format(err))
+            bd.rollback()
+        finally:
+            cursor.close()
+            bd.close()
+
     return render_template('cadastro.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def pagina_login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        senha = request.form.get('senha')
 
+        if not email or not senha:
+            flash("Todos os campos são obrigatórios.")
+            return redirect(url_for('pagina_login'))
 
+        bd = conecta_no_banco_de_dados()
+        if bd is None:
+            flash("Erro ao conectar ao banco de dados.")
+            return redirect(url_for('pagina_login'))
 
-
-@app.route('/confirmacao', methods=['GET', 'POST'])
-def contato():
-    form = FormularioCadastro()
-
-
-    if form.validate_on_submit():
-        nome = form.nome.data
-        email = form.email.data
-        mensagem = form.mensagem.data    
-   
-        
+        cursor = bd.cursor()
         try:
-            
-            bd =conecta_no_banco_de_dados()
-      
-            
-            cursor = bd.cursor()
-            sql = "INSERT INTO contatos (nome, email) VALUES (%s, %s)"
-            values = (nome, email, mensagem)
-            cursor.execute(sql, values)
-            bd.commit()
-
-            print(f"Dados do formulário salvos com sucesso!")
-            
+            cursor.execute("SELECT * FROM contatos WHERE email=%s AND senha=%s", (email, senha))
+            user = cursor.fetchone()
+            if user:
+                flash("Login realizado com sucesso.")
+                return redirect(url_for('ola'))
+            else:
+                flash("Usuário ou senha incorretos.")
+        except mysql.connector.Error as err:
+            flash("Erro ao realizar login: {}".format(err))
         finally:
-            if bd is not None:
-             bd.close()
+            cursor.close()
+            bd.close()
 
-app.run()
+    return render_template('login.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -6,15 +6,16 @@
     <title>Login</title>
 </head>
 <body>
-    <form>
+    <form action="/login" method="post">
         <label for="name">Nome:</label><br>
-        <input type="text" id="fname" nome="fname"><br>
+        <input type="text" id="fname" name="nome"><br>
         <label for="email">Email:</label><br>
-        <input type="email" id="lname" name="lname"><br><br>
-        <!-- <input type="submit" value="Enviar"> -->
-        <a href="{{('inicio')}}"><input type="button" value="Enviar"></a>
-      </form> 
+        <input type="email" id="email" name="email"><br><br>
+        <label for="senha">Senha:</label><br>
+        <input type="password" id="senha" name="senha"><br><br>
+        <input type="submit" value="Enviar">
+    </form> 
 
-      <a href="{{'cadastro'}}"><input type="button" value="Faça seu cadastro"></a>
+    <a href="{{ url_for('cadastrar') }}"><input type="button" value="Faça seu cadastro"></a>
 </body>
 </html>
