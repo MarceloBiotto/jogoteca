@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, PasswordField, validators
 from typing import NotRequired
@@ -29,21 +29,16 @@ class FormularioCadastro(FlaskForm):
     # mensagem = StringField('Mensagem:', validators=[validators.DataRequired(), validators.Length(min=10)])
     
     
-@app.route('/login') ##rota para fazer o login
+@app.route('/login', methods=['GET','POST']) ##rota para fazer o login
 def pagina_login():
     
-    # bd =conecta_no_banco_de_dados()
-    # email = request.form.get('email')
-    # senha = request.form.get('senha')
-    # cursor = bd.cursor()
-    # cursor.execute("""
-    #         SELECT *
-    #         FROM usuarios
-    #         WHERE email = %s AND senha = %s;
-    #     """, (email, senha,))
-    # usuario = cursor.fetchone()
-    # cursor.close()
-    # bd.close()
+    bd =conecta_no_banco_de_dados()
+    nome = request.form.get('nome')
+    email = request.form.get('email')
+    print(nome,email)  ##verificacao se esta printando, atualmente exibindo none none 21:02 03/07
+    cursor = bd.cursor()
+    cursor.close()
+    bd.close()
     return render_template('login.html')
 
 @app.route('/cadastro') ##rota para fazer o cadastro caso o usuario n possua cadastro

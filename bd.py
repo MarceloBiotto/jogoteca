@@ -37,6 +37,23 @@ def conecta_no_banco_de_dados():
         database='jogoteca'  # Especificar o banco de dados
         )
         
+        
+        
+        cursor = cnx.cursor()
+        cursor.execute('CREATE TABLE nome (id INT AUTO_INCREMENT PRIMARY KEY,nome VARCHAR(255) NOT NULL,email VARCHAR(255) NOT NULL,mensagem TEXT NOT NULL);')
+        cursor.execute('CREATE TABLE usuarios (id INT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(255), email VARCHAR(255),senha VARCHAR(255));')
+        
+        cnx.commit()
+        nome="ROOT"
+        email="lee.am@live.com"
+        senha="12345"
+        sql = "INSERT INTO usuarios (nome, jogos) VALUES (%s, %s)"
+        valores = (nome, email, senha)
+        cursor.execute(sql, valores)
+        cnx.commit()
+        cnx.commit()
+        cnx.close()
+        
     try:
         bd = mysql.connector.connect(
             host='127.0.0.1',
