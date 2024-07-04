@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash,session
 import mysql.connector
+from wtforms import StringField, EmailField, PasswordField, validators
+from flask_wtf import FlaskForm
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta'  # Necessária para usar flash messages e cookies
@@ -78,7 +80,38 @@ def cria_banco_de_dados_e_tabelas(cnx):
         raise
     finally:
         cursor.close()
+@app.route('/validalogin', methods=['POST', 'GET'])
+def login():
+  
+  email = request.form.get('email')
+  senha = request.form.get('senha')
 
+  # Validar as credenciais
+  bd =conecta_no_banco_de_dados()
+            # A linha bd = conecta_no_banco_de_dados() tenta estabelecer uma conexão com o banco de dados usando a função conecta_no_banco_de_dados().
+            # Essa função, é responsável por lidar com os detalhes da conexão.
+            
+  cursor = bd.cursor()
+  cursor.execute("""
+            SELECT *
+            FROM usuarios
+            WHERE email = %s AND senha = %s;
+        """, (email, senha,))
+  usuario = cursor.fetchone()
+  cursor.close()
+  bd.close()
+
+  if usuario:
+  # Login bem-sucedido
+   session['usuario_id'] = usuario[0]
+   return redirect(url_for('inicio'))
+  else:
+    # Login inválido
+    
+    return redirect(url_for('pagina_login'))
+  
+
+  
 class Jogo:
     def __init__(self, nome, categoria, console):
         self.nome = nome
