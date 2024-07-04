@@ -2,84 +2,15 @@ from flask import Flask, render_template, request, redirect, url_for, flash,sess
 import mysql.connector
 from wtforms import StringField, EmailField, PasswordField, validators
 from flask_wtf import FlaskForm
+from bd import conecta_no_banco_de_dados
+
+
+
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta'  # Necessária para usar flash messages e cookies
 
-def conecta_no_banco_de_dados():
-    try:
-       
-        cnx = mysql.connector.connect(
-            host='127.0.0.1',
-            user='root',
-            password='',
-        )
-        cursor = cnx.cursor()
 
-        # Verifica se o banco de dados 'jogoteca' já existe
-        cursor.execute("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = 'jogoteca'")
-        result = cursor.fetchone()
-
-        if not result:
-            # Se o banco de dados não existe, crie-o
-            print('Banco de dados jogoteca não encontrado. Criando novo banco de dados...')
-            cria_banco_de_dados_e_tabelas(cnx)
-        else:
-            print('O banco de dados jogoteca existe e está pronto para uso.')
-
-        cursor.close()
-        cnx.close()
-
-        # Conecte-se ao banco de dados específico 'jogoteca'
-        bd = mysql.connector.connect(
-            host='127.0.0.1',
-            user='root',
-            password='',
-            database='jogoteca'
-        )
-        return bd
-
-    except mysql.connector.Error as err:
-        print("Erro de conexão com o banco de dados:", err)
-        raise
-
-def cria_banco_de_dados_e_tabelas(cnx):
-    try:
-        cursor = cnx.cursor()
-        # Cria o banco de dados 'jogoteca'
-        cursor.execute('CREATE DATABASE jogoteca;')
-        cnx.commit()
-
-        # Seleciona o banco de dados recém-criado
-        cnx.database = 'jogoteca'
-        
-        # Cria a tabela 'contatos'
-        cursor.execute('''
-            CREATE TABLE contatos (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                nome VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                senha VARCHAR(255) NOT NULL
-            );
-        ''')
-        cnx.commit()
-
-        # Insere um exemplo de contato
-        nome = "ROOT"
-        email = "lee.am@live.com"
-        senha = "12345"
-        sql = "INSERT INTO contatos (nome, email, senha) VALUES (%s, %s, %s)"
-        valores = (nome, email, senha)
-        cursor.execute(sql, valores)
-        cnx.commit()
-
-        print('Banco de dados e tabelas criados com sucesso.')
-
-    except mysql.connector.Error as err:
-        print("Erro ao criar banco de dados ou tabelas:", err)
-        raise
-    finally:
-        cursor.close()
 @app.route('/validalogin', methods=['POST', 'GET'])
 def login():
   
@@ -94,7 +25,7 @@ def login():
   cursor = bd.cursor()
   cursor.execute("""
             SELECT *
-            FROM usuarios
+            FROM contatos
             WHERE email = %s AND senha = %s;
         """, (email, senha,))
   usuario = cursor.fetchone()
@@ -142,34 +73,72 @@ def criar():
 
 @app.route('/cadastrar', methods=['GET', 'POST'])
 def cadastrar():
-    if request.method == 'POST':
-        nome = request.form['nome']
-        email = request.form['email']
-        senha = request.form['senha']
+    nome = request.form.get('nome')
+    email = request.form.get('email')
+    senha = request.form.get('senha')
 
-        if not nome or not email or not senha:
-            flash("Todos os campos são obrigatórios.")
-            return redirect(url_for('cadastrar'))
-
-        bd = conecta_no_banco_de_dados()
-        if bd is None:
-            flash("Erro ao conectar ao banco de dados.")
-            return redirect(url_for('cadastrar'))
-
-        cursor = bd.cursor()
+    # Validação
+    if not nome:
+        flash('O nome é obrigatório.')
+        return render_template('cadastro.html')
+    if not email:
+        flash('O e-mail é obrigatório.')
+        return render_template('cadastro.html')
+    if not senha:
+        flash('A senha é obrigatória.')
+        return render_template('cadastro.html')        
+    # Abre uma conexão com o banco de dados MySQL usando as credenciais especificadas.
+    bd =conecta_no_banco_de_dados()
+                # A linha bd = conecta_no_banco_de_dados() tenta estabelecer uma conexão com o banco de dados usando a função conecta_no_banco_de_dados().
+                # Essa função, é responsável por lidar com os detalhes da conexão.
+                
+    cursor = bd.cursor()
+            
+    # Executa uma consulta SQL para verificar se já existe um usuário com o email informado.
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM contatos
+        WHERE email = %s;
+        """, (email,))
+            
+    # Obtém o resultado da consulta (o número de usuários encontrados).
+    existe = cursor.fetchone()[0]
+            
+    # Fecha o cursor e a conexão com o banco de dados.
+    cursor.close()
+    bd.close()
+    # Se a consulta anterior retornou um valor maior que zero (usuário já existe), renderiza o template 'cadastro.html' novamente, passando uma mensagem de erro.
+    if existe > 0:
+        flash('Email já cadastrado')
+        return render_template('cadastro.html')
+    else:
         try:
-            cursor.execute("INSERT INTO contatos (nome, email, senha) VALUES (%s, %s, %s)", (nome, email, senha))
-            bd.commit()
-            flash("Usuário cadastrado com sucesso.")
-            return redirect(url_for('pagina_login'))
-        except mysql.connector.Error as err:
-            flash("Erro ao cadastrar usuário: {}".format(err))
-            bd.rollback()
-        finally:
-            cursor.close()
-            bd.close()
+        # Reabre a conexão com o banco.
+            bd =conecta_no_banco_de_dados()
+                    # A linha bd = conecta_no_banco_de_dados() tenta estabelecer uma conexão com o banco de dados usando a função conecta_no_banco_de_dados().
+                    # Essa função, é responsável por lidar com os detalhes da conexão.
+                    
+            cursor = bd.cursor()
+                        
+            # Prepara a consulta SQL de inserção.
+            sql = 'INSERT INTO contatos (nome, email, senha) VALUES (%s, %s, %s)'
+            values = (nome, email, senha)
 
-    return render_template('cadastro.html')
+            # Executa a consulta com os valores obtidos do formulário.
+            cursor.execute(sql, list(values))
+            # Fecha o cursor e confirma a transação (commit).
+            cursor.close()
+            bd.commit()
+
+            # Redireciona para a página inicial.
+            return redirect(url_for('login'))
+            # Se ocorrer um erro de banco de dados, renderiza o template 'cadastro.html' novamente, passando a mensagem de erro SQL.
+        except bd.connector.Error as e:   
+                return render_template('cadastro', error=str(e)) 
+            
+          # Se o usuário não existe, tenta inserir o novo usuário no banco de dados:   
+    
+  
 
 @app.route('/', methods=['GET', 'POST'])
 def pagina_login():
