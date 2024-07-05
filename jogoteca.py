@@ -54,9 +54,10 @@ jogo2 = Jogo('God of War', 'Hack n Slash', 'PS2')
 jogo3 = Jogo('Mortal Kombat', 'Luta', 'PS2')
 lista = [jogo1, jogo2, jogo3]
 
-@app.route('/inicio')
+@app.route('/inicio', methods=['GET',])
 def index():
-    return render_template('lista.html', titulo='Jogos', jogos=lista)
+    nome = request.form.get('nome')
+    return render_template('lista.html', titulo='Jogos', jogos=lista, usuario = nome) ## aqui nao funciona ainda na proxima feature sera implementado o nome do usuario logado de maneira correta
 
 @app.route('/novo')
 def novo():
@@ -143,10 +144,11 @@ def cadastrar():
 @app.route('/', methods=['GET', 'POST'])
 def pagina_login():
     if request.method == 'POST':
+        nome = request.form.get('nome')
         email = request.form.get('email')
         senha = request.form.get('senha')
 
-        if not email or not senha:
+        if not nome or not email or not senha:
             flash("Todos os campos são obrigatórios.")
             return redirect(url_for('pagina_login'))
 
