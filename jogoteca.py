@@ -35,6 +35,9 @@ def login():
   if usuario:
   # Login bem-sucedido
    session['usuario_id'] = usuario[0]
+   session['usuario_nome'] = usuario[1]
+  #  nome_capturado = session.get('usuario_nome')
+   print('usuario_nome')
    return redirect(url_for('inicio'))
   else:
     # Login inválido
@@ -56,8 +59,9 @@ lista = [jogo1, jogo2, jogo3]
 
 @app.route('/inicio', methods=['GET',])
 def index():
-    nome = request.form.get('nome')
-    return render_template('lista.html', titulo='Jogos', jogos=lista, usuario = nome) ## aqui nao funciona ainda na proxima feature sera implementado o nome do usuario logado de maneira correta
+    
+      usuario_nome = session.get('usuario_nome')
+      return render_template('lista.html', titulo='Jogos', jogos=lista, usuario=usuario_nome) ## aqui nao funciona ainda na proxima feature sera implementado o nome do usuario logado de maneira correta
 
 @app.route('/novo')
 def novo():
