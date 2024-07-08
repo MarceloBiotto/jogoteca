@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import mysql.connector
 from wtforms import StringField, EmailField, PasswordField, validators
 from flask_wtf import FlaskForm
-from bd import conecta_no_banco_de_dados
+from bd import conecta_no_banco_de_dados,cria_tabela_jogos
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta'  # Necessária para usar flash messages e cookies
@@ -62,12 +62,44 @@ def novo():
 
 @app.route('/criar', methods=['POST'])
 def criar():
+    if 'usuario_nome' not in session or session['usuario_nome'] == None:
+        return redirect(url_for('pagina_login'))
     nome = request.form['nome']
     categoria = request.form['categoria']
     console = request.form['console']
-    jogo = Jogo(nome, categoria, console)
+    jogo = Jogo(nome, categoria, console) ## acrescentar aqui logica para criacao da tabela e adicao de jogos a mesma.
     lista.append(jogo)
-    return redirect(url_for('index'))
+    bd =conecta_no_banco_de_dados()
+            # A linha bd = conecta_no_banco_de_dados() tenta estabelecer uma conexão com o banco de dados usando a função conecta_no_banco_de_dados().
+            # Essa função, é responsável por lidar com os detalhes da conexão.
+    # bd = cria_tabela_jogos()
+    cursor = bd.cursor()
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM lista_de_jogos
+        WHERE nome = %s AND categoria = %s AND console= %s;
+    """, (nome,categoria,console))
+    existe = cursor.fetchone()[0]
+    bd = cria_tabela_jogos()
+    cursor.close()
+    bd.close()
+    if existe > 0:
+        flash('Email já cadastrado')
+        return render_template('cadastro.html')
+    else:
+        try:
+            bd = conecta_no_banco_de_dados()
+            cursor = bd.cursor()
+            sql = 'INSERT INTO lista_de_jogos (Nome, Categoria, console) VALUES (%s, %s, %s)'
+            values = (nome, categoria, console)
+            cursor.execute(sql, values)
+            bd.commit()
+            cursor.close()
+            return redirect(url_for('index'))
+        except mysql.connector.Error as e:
+            return render_template('cadastro.html', error=str(e))
+
+    
 
 @app.route('/cadastrar', methods=['GET', 'POST'])
 def cadastrar():
