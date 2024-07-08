@@ -4,18 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="stylesheet" href="../static/bootstrap.css">
 </head>
 <body>
+  <div class="container">
     <form action="/" method="post">
+      <fieldset>
         <label for="name">Nome:</label><br>
         <input type="text" id="fname" name="nome"><br>
         <label for="email">Email:</label><br>
         <input type="email" id="email" name="email"><br><br>
         <label for="senha">Senha:</label><br>
         <input type="password" id="senha" name="senha"><br><br>
-        <input type="submit" value="Enviar">
+        <input type="submit" value="Enviar" class="btn btn-primary btn-salvar">
+      </fieldset>
     </form> 
+    <a href="{{ url_for('cadastrar') }}"><input type="button"  class="btn btn-primary btn-salvar"   value="Faça seu cadastro"></a>
+  </div>   
 
-    <a href="{{ url_for('cadastrar') }}"><input type="button" value="Faça seu cadastro"></a>
+   
 </body>
 </html>
