@@ -34,7 +34,7 @@ def login():
     else:
         # Login inválido
         flash('Usuário não logado!')
-        return redirect(url_for('pagina_login'))
+        return redirect(url_for('pagina_lo  gin'))
 
 class Jogo:
     def __init__(self, nome, categoria, console):
@@ -47,13 +47,17 @@ jogo2 = Jogo('God of War', 'Hack n Slash', 'PS2')
 jogo3 = Jogo('Mortal Kombat', 'Luta', 'PS2')
 lista = [jogo1, jogo2, jogo3]
 
-@app.route('/inicio', methods=['GET'])
+@app.route('/inicio', methods=['GET']) 
 def index():
-    usuario_nome = session.get('usuario_nome')
+    if 'usuario_nome' not in session or session['usuario_nome'] == None:
+        return redirect(url_for('pagina_login'))
+    usuario_nome = session.get('usuario_nome')  
     return render_template('lista.html', titulo='Jogos', jogos=lista, usuario=usuario_nome)
 
 @app.route('/novo')
 def novo():
+    if 'usuario_nome' not in session or session['usuario_nome'] == None:
+        return redirect(url_for('pagina_login'))
     return render_template('novo.html', titulo='Novo Jogo')
 
 @app.route('/criar', methods=['POST'])
