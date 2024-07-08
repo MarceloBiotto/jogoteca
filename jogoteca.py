@@ -34,7 +34,7 @@ def login():
     else:
         # Login inválido
         flash('Usuário não logado!')
-        return redirect(url_for('pagina_lo  gin'))
+        return redirect(url_for('pagina_login'))
 
 class Jogo:
     def __init__(self, nome, categoria, console):
