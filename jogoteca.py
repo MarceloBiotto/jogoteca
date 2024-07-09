@@ -49,10 +49,19 @@ lista = [jogo1, jogo2, jogo3]
 
 @app.route('/inicio', methods=['GET']) 
 def index():
-    if 'usuario_nome' not in session or session['usuario_nome'] == None:
+    if 'usuario_nome' not in session or session['usuario_nome'] is None:
         return redirect(url_for('pagina_login'))
+
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+    cursor.execute("SELECT nome, categoria, console FROM lista_de_jogos")
+    jogos = cursor.fetchall()
+    cursor.close()
+    bd.close()
+
     usuario_nome = session.get('usuario_nome')  
-    return render_template('lista.html', titulo='Jogos', jogos=lista, usuario=usuario_nome)
+    return render_template('lista.html', titulo='Jogos', jogos=jogos, usuario=usuario_nome)
+
 
 @app.route('/novo')
 def novo():
@@ -62,42 +71,48 @@ def novo():
 
 @app.route('/criar', methods=['POST'])
 def criar():
-    if 'usuario_nome' not in session or session['usuario_nome'] == None:
+    if 'usuario_nome' not in session or session['usuario_nome'] is None:
         return redirect(url_for('pagina_login'))
+
     nome = request.form['nome']
     categoria = request.form['categoria']
     console = request.form['console']
-    jogo = Jogo(nome, categoria, console) ## acrescentar aqui logica para criacao da tabela e adicao de jogos a mesma.
-    lista.append(jogo)
-    bd =conecta_no_banco_de_dados()
-            # A linha bd = conecta_no_banco_de_dados() tenta estabelecer uma conexão com o banco de dados usando a função conecta_no_banco_de_dados().
-            # Essa função, é responsável por lidar com os detalhes da conexão.
-    # bd = cria_tabela_jogos()
+
+    bd = conecta_no_banco_de_dados()
     cursor = bd.cursor()
+
+    # Criar a tabela de jogos se não existir
+    cria_tabela_jogos()
+
+    # Verificar se o jogo já existe na lista de jogos
     cursor.execute("""
         SELECT COUNT(*)
         FROM lista_de_jogos
-        WHERE nome = %s AND categoria = %s AND console= %s;
-    """, (nome,categoria,console))
+        WHERE nome = %s AND categoria = %s AND console = %s;
+    """, (nome, categoria, console))
     existe = cursor.fetchone()[0]
-    bd = cria_tabela_jogos()
-    cursor.close()
-    bd.close()
+
     if existe > 0:
-        flash('Email já cadastrado')
-        return render_template('cadastro.html')
-    else:
-        try:
-            bd = conecta_no_banco_de_dados()
-            cursor = bd.cursor()
-            sql = 'INSERT INTO lista_de_jogos (Nome, Categoria, console) VALUES (%s, %s, %s)'
-            values = (nome, categoria, console)
-            cursor.execute(sql, values)
-            bd.commit()
-            cursor.close()
-            return redirect(url_for('index'))
-        except mysql.connector.Error as e:
-            return render_template('cadastro.html', error=str(e))
+        flash('Jogo já cadastrado')
+        cursor.close()
+        bd.close()
+        return render_template('novo.html', titulo='Novo Jogo')
+
+    try:
+        sql = 'INSERT INTO lista_de_jogos (nome, categoria, console) VALUES (%s, %s, %s)'
+        values = (nome, categoria, console)
+        cursor.execute(sql, values)
+        bd.commit()
+        flash('Jogo adicionado com sucesso!')
+    except mysql.connector.Error as e:
+        flash('Erro ao adicionar o jogo: ' + str(e))
+    finally:
+        cursor.close()
+        bd.close()
+
+    return redirect(url_for('index'))
+
+
 
     
 
@@ -189,6 +204,8 @@ def logout():
 if __name__ == '__main__':
     db_conn = conecta_no_banco_de_dados()
     if db_conn:
+        cria_tabela_jogos()
         print("Conexão estabelecida com sucesso.")
         db_conn.close()
     app.run(debug=True)
+

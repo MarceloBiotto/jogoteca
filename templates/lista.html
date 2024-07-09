@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Jogoteca</title>
     <link rel="stylesheet" href="../static/bootstrap.css">
-  </head>
-  <body>
+</head>
+<body>
     <div class="container">
         <div class="page-header">
             <h1>{{ titulo }} de {{ usuario }}</h1>
@@ -22,9 +22,9 @@
             <tbody>
               {% for jogo in jogos %}
                 <tr>
-                    <td>{{ jogo.nome}}</td>
-                    <td>{{ jogo.categoria}}</td>
-                    <td>{{ jogo.console}}</td>
+                    <td>{{ jogo[0] }}</td>
+                    <td>{{ jogo[1] }}</td>
+                    <td>{{ jogo[2] }}</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -32,5 +32,5 @@
     </div>
     <a href="{{ url_for('novo') }}"><input type="button"  class="btn btn-primary btn-salvar"   value="Add novo jogo"></a>
     <a href="{{ url_for('logout') }}"><input type="button"  class="btn btn-primary btn-salvar"   value="logout"></a>
-  </body>
+</body>
 </html>

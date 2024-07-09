@@ -64,34 +64,32 @@ def cria_banco_de_dados_e_tabelas(cnx):
     finally:
         cursor.close()
         
-        
-        
 def cria_tabela_jogos():
-    cnx = mysql.connector.connect(host='127.0.0.1', user='root', password='')
+    cnx = mysql.connector.connect(host='127.0.0.1', user='root', password='', database='jogoteca')
     cursor = cnx.cursor()
     try:
-        cursor = cnx.cursor()
-        cnx.commit()
-
-        cnx.database = 'jogoteca'
+        # Verificar se a tabela já existe
+        cursor.execute("SHOW TABLES LIKE 'lista_de_jogos';")
+        result = cursor.fetchone()
         
-        # cursor.execute('''CREATE TABLE lista_de_jogos(Nome VARCHAR(255) NOT NULL, Categoria VARCHAR(255) NOT NULL,console varchar (50) NOT NULL);''')
-        cnx.commit()
-        nome = "Resident evil"
-        categoria = "survivor horror"
-        console = "ps1"
-        sql = "INSERT INTO lista_de_jogos (Nome, Categoria, console) VALUES (%s, %s, %s)"
-        valores = (nome, categoria, console)
-        cursor.execute(sql, valores)
-        cnx.commit()
+        # Se a tabela não existe, criá-la
+        if not result:
+            cursor.execute('''
+                CREATE TABLE lista_de_jogos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nome VARCHAR(255) NOT NULL,
+                    categoria VARCHAR(255) NOT NULL,
+                    console VARCHAR(50) NOT NULL
+                );
+            ''')
+            cnx.commit()
+            print('Tabela lista_de_jogos criada com sucesso.')
+        else:
+            print('Tabela lista_de_jogos já existe.')
+        
     except Error as err:
         print("Erro ao criar banco de dados ou tabelas:", err)
         raise
     finally:
-        cursor.close()   
-
-if __name__ == '__main__':
-    db_conn = conecta_no_banco_de_dados()
-    if db_conn:
-        print("Conexão estabelecida com sucesso.")
-        db_conn.close()
+        cursor.close()
+        cnx.close()
