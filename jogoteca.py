@@ -5,7 +5,7 @@ from flask_wtf import FlaskForm
 from bd import conecta_no_banco_de_dados,cria_tabela_jogos
 
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta'  # Necessária para usar flash messages e cookies
+app.secret_key = 'sua_chave_secreta'  
 
 @app.route('/validalogin', methods=['POST', 'GET'])
 def login():
@@ -13,7 +13,7 @@ def login():
     email = request.form.get('email')
     senha = request.form.get('senha')
 
-    # Validar as credenciais
+   
     bd = conecta_no_banco_de_dados()
     cursor = bd.cursor()
     cursor.execute("""
@@ -195,6 +195,32 @@ def pagina_login():
 
     return render_template('login.html')
 
+@app.route('/excluir_usuario/<nome>', methods=['GET', 'POST'])
+def excluir_usuario(nome):
+    # Validar o ID
+    if  nome.isdigit():
+        return render_template('login.html', error='ID inválido')
+    # Executando a exclusão
+    try:
+        bd =conecta_no_banco_de_dados()
+            # A linha bd = conecta_no_banco_de_dados() tenta estabelecer uma conexão com o banco de dados usando a função conecta_no_banco_de_dados().
+            # Essa função, é responsável por lidar com os detalhes da conexão.
+            
+        cursor = bd.cursor()
+        cursor.execute("""
+            DELETE FROM contatos
+            WHERE nome = %s;
+        """, (nome,))
+        cursor.close()
+        bd.commit()
+
+        return redirect(url_for('login'))
+    except bd.connector.Error as e:
+        return render_template('excluir-usuario.html', error=str(e))
+
+
+
+
 @app.route('/logout')
 def logout():
     session.pop('usuario_nome', None)
@@ -205,7 +231,7 @@ if __name__ == '__main__':
     db_conn = conecta_no_banco_de_dados()
     if db_conn:
         cria_tabela_jogos()
-        print("Conexão estabelecida com sucesso.")
+        
         db_conn.close()
     app.run(debug=True)
 
