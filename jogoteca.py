@@ -197,6 +197,8 @@ def pagina_login():
 
 @app.route('/excluir_usuario/<nome>', methods=['GET', 'POST'])
 def excluir_usuario(nome):
+    nome = session.get['usuario_nome']
+    print(nome)
     # Validar o ID
     if  nome.isdigit():
         return render_template('login.html', error='ID inválido')
@@ -219,6 +221,57 @@ def excluir_usuario(nome):
         return render_template('excluir-usuario.html', error=str(e))
 
 
+
+@app.route('/relatorio_excel')
+def gerar_relatorio():
+    # Obter o ID do usuário da sessão
+    usuario_id = session.get('usuario_id')
+
+    # Conectar ao banco de dados
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+
+    # Executar consulta SQL
+    cursor.execute("""
+        SELECT ct.*
+        FROM contatos AS ct
+        INNER JOIN usuario_contato AS uc ON uc.contato_id = ct.id_contato
+        WHERE uc.usuario_id = %s order by ct.id_contato
+    """, (usuario_id,),)
+
+    data = []
+    for row in cursor.fetchall():
+        data.append(row)
+
+    # Criar um objeto de planilha do Excel em memória
+    output = io.BytesIO()
+    workbook = Workbook(output)
+    worksheet = workbook.add_worksheet()
+
+    # Definir o cabeçalho da planilha
+    worksheet.write('A1', 'ID')
+    worksheet.write('B1', 'Nome')
+    worksheet.write('C1', 'Email')
+    worksheet.write('D1', 'Mensagem')
+    
+    # Escrever os dados da tabela na planilha
+    for i, row in enumerate(data):
+        worksheet.write(i + 1, 0, row[0])
+        worksheet.write(i + 1, 1, row[1])
+        worksheet.write(i + 1, 2, row[2])
+        worksheet.write(i + 1, 3, row[3])
+      
+
+    # Salvar a planilha na memória
+    workbook.close()
+    output.seek(0)
+
+    # Criar a resposta HTTP com os cabeçalhos corretos
+    response = make_response(output.read())
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = 'attachment; filename=relatorio_contatos.xlsx'
+
+    return response
 
 
 @app.route('/logout')

@@ -14,6 +14,7 @@ def conecta_no_banco_de_dados():
             cria_banco_de_dados_e_tabelas(cnx)
         else:
             print('O banco de dados jogoteca existe e está pronto para uso.')
+          
 
         cursor.close()
         cnx.close()
