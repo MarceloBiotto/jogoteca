@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import mysql.connector
 from wtforms import StringField, EmailField, PasswordField, validators
 from flask_wtf import FlaskForm
+import reportlab
+from xlsxwriter import Workbook
+from reportlab.lib.pagesizes import letter
 from bd import conecta_no_banco_de_dados,cria_tabela_jogos
 
 app = Flask(__name__)
