@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erro ao Excluir Usuário</title>
+    <link rel="stylesheet" href="../static/bootstrap.css">
+</head>
+<body>
+    <div class="container">
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
+        <a href="{{ url_for('pagina_login') }}" class="btn btn-primary btn-salvar">Voltar para Login</a>
+    </div>
+</body>
+</html>

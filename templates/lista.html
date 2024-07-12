@@ -30,8 +30,9 @@
             </tbody>
         </table>
     </div>
-    <a href="{{ url_for('novo') }}"><input type="button"  class="btn btn-primary btn-salvar"   value="Add novo jogo"></a>
-    <a href="{{ url_for('logout') }}"><input type="button"  class="btn btn-primary btn-salvar"   value="logout"></a>
-    <a href="/excluir_usuario/{{nome}}" class="excluir"><input type="button" class="btn btn-primary btn-salvar" value="Excluir conta"></a>
+    <a href="{{ url_for('novo') }}"><input type="button" class="btn btn-primary btn-salvar" value="Add novo jogo"></a>
+    <a href="{{ url_for('logout') }}"><input type="button" class="btn btn-primary btn-salvar" value="Logout"></a>
+    <a href="{{ url_for('excluir_usuario', nome=usuario) }}" class="excluir"><input type="button" class="btn btn-primary btn-salvar" value="Excluir conta"></a>
+    <a href="{{ url_for('gerar_relatorio') }}"><input type="button" class="btn btn-primary btn-salvar" value="Gerar Relatório Excel"></a>
 </body>
 </html>
