@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session,make_response
 import mysql.connector
 from wtforms import StringField, EmailField, PasswordField, validators
 from flask_wtf import FlaskForm
 import reportlab
 from xlsxwriter import Workbook
 from reportlab.lib.pagesizes import letter
+from io import BytesIO
 from bd import conecta_no_banco_de_dados,cria_tabela_jogos
 
 app = Flask(__name__)
@@ -115,7 +116,7 @@ def criar():
 
     return redirect(url_for('index'))
 
-
+    
 
     
 
@@ -228,8 +229,8 @@ def excluir_usuario(nome):
 @app.route('/relatorio_excel')
 def gerar_relatorio():
     # Obter o ID do usuário da sessão
-    usuario_id = session.get('usuario_id')
-
+    # usuario_id = session.get('usuario_id')
+    nome = session.get['usuario_nome']
     # Conectar ao banco de dados
     bd = conecta_no_banco_de_dados()
     cursor = bd.cursor()
@@ -238,9 +239,9 @@ def gerar_relatorio():
     cursor.execute("""
         SELECT ct.*
         FROM contatos AS ct
-        INNER JOIN usuario_contato AS uc ON uc.contato_id = ct.id_contato
+        INNER JOIN nome AS uc ON uc.contato_id = ct.id_contato
         WHERE uc.usuario_id = %s order by ct.id_contato
-    """, (usuario_id,),)
+    """, (nome,),)
 
     data = []
     for row in cursor.fetchall():
@@ -275,7 +276,65 @@ def gerar_relatorio():
     response.headers['Content-Disposition'] = 'attachment; filename=relatorio_contatos.xlsx'
 
     return response
+@app.route('/relatorio_pdf')
+def gerar_relatorio_pdf():
+    # Obter o ID do usuário da sessão
+    usuario_id = session.get('usuario_id')
 
+    # Conectar ao banco de dados
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+
+    # Executar consulta SQL
+    cursor.execute("""
+    SELECT ct.*
+    FROM contatos AS ct
+    INNER JOIN usuario_contato AS uc ON uc.contato_id = ct.id_contato
+    WHERE uc.usuario_id = %s order by ct.id_contato
+    """, (usuario_id,),)
+
+    # Obter os dados da consulta
+    data = cursor.fetchall()
+
+    # Criar um PDF
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    c.setTitle('Relatório de Contatos')
+
+    # Definir o cabeçalho do relatório
+    c.setFont('Times-Roman', 12)
+    c.drawString(25, 750, 'Relatório de Contatos')
+
+    # Definir as colunas do relatório
+    c.setFont('Times-Roman', 10)
+    c.drawString(25, 725, 'ID')
+    c.drawString(100, 725, 'Nome')
+    c.drawString(200, 725, 'Email')
+    c.drawString(300, 725, 'Mensagem')
+
+    # Escrever os dados da tabela no relatório
+    for i, row in enumerate(data):
+        y = 700 - i * 25
+        c.setFont('Times-Roman', 8)
+        c.drawString(25, y, str(row[0]))
+        c.drawString(100, y, str(row[1]))
+        c.drawString(200, y, str(row[2]))
+        c.drawString(300, y, str(row[3]))
+
+    # Salvar o conteúdo do PDF no buffer
+     # Salvar o conteúdo do PDF no buffer
+    c.save()
+
+    # Obter o conteúdo do buffer como uma string
+    pdf_content = buffer.getvalue()
+
+     
+    response = make_response(pdf_content)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=relatorio.pdf'
+
+    # Retornar a resposta para iniciar o download
+    return response
 
 @app.route('/logout')
 def logout():
